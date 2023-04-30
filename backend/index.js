@@ -7,13 +7,20 @@ const docusign = require('docusign-esign');
 const fs = require('fs');
 const session = require('express-session');
 const crypto = require('crypto');
+const cors = require('cors');
 const tokenValidation = require('./tokenValidation');
-const { getEnvelopesApi, makeEnvelope, makeRecipientViewRequest} = require('./envelopeCreation');
+const {
+  getEnvelopesApi,
+  makeEnvelope,
+  makeRecipientViewRequest,
+} = require('./envelopeCreation');
 
 const app = express();
 
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use('/static', express.static('../frontend/build/static'));
 
 const SECRET_KEY = crypto.randomBytes(32).toString('hex');
 app.use(
@@ -56,14 +63,18 @@ const handleFormPost = async (req, res) => {
   console.log('Envelope results: ', results);
 
   //For Testing Purpose: Redirect the client to the recipient view URL.
-  res.redirect(results.url);
+  // res.redirect(results.url);
+  res.status(200).json({
+    success: true,
+    redirectUrl: `${results.url}`,
+  });
 };
 
 app.post('/form', handleFormPost);
 
 app.get('/', async (req, res) => {
   await tokenValidation(req, res);
-  res.sendFile(path.join(__dirname, '../frontend/public', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 
 app.get('/signing-complete', (req, res) => {
