@@ -11,7 +11,7 @@ const Form = () => {
     event.preventDefault();
     setIsLoading(true); // Set isLoading to true when form is submitted
     // Send form data to localhost:8000
-    fetch('http://localhost:3000/form', {
+    fetch('https://cobalt-assignment.onrender.com/form', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email }),
