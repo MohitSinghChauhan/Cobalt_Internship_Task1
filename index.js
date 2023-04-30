@@ -103,24 +103,59 @@ const makeEnvelope = (name, email) => {
   return envelope;
 };
 
+// Creates a RecipientViewRequest object for obtaining a recipient view URL.
+const makeRecipientViewRequest = (recipientName, recipientEmail) => {
+  // Create a new RecipientViewRequest object.
+  const recipientViewRequest = new docusign.RecipientViewRequest();
+
+  // Specify the URL that the recipient will be redirected to after completing the signing process.
+  recipientViewRequest.returnUrl = 'http://localhost:3000/signing-complete';
+
+  // Specify the authentication method that the recipient will use to access the signing process.
+  recipientViewRequest.authenticationMethod = 'none';
+
+  // Specify the recipient's name, email, and client user ID.
+  recipientViewRequest.userName = recipientName;
+  recipientViewRequest.email = recipientEmail;
+  recipientViewRequest.clientUserId = process.env.CLIENT_USER_ID; // This is the client user ID that was set when creating the envelope.
+
+  // Return the RecipientViewRequest object.
+  return recipientViewRequest;
+};
+
 // This function handles the POST request to the /form endpoint
-const handleFormPost = async (request, response) => {
+const handleFormPost = async (req, res) => {
   // Ensure that the access token is valid and up to date
-  await tokenValidation(request, response);
+  await tokenValidation(req, res);
 
   // Get an instance of the EnvelopesApi with the configured API client
-  const envelopesApi = getEnvelopesApi(request);
+  const envelopesApi = getEnvelopesApi(req);
+
+  // Extract the name and email of the recipient from the request body.
+  const { name, email } = req.body;
 
   // Create an envelope object for the provided recipient details
-  const envelope = makeEnvelope(request.body.name, request.body.email);
+  const envelope = makeEnvelope(name, email);
 
   // Create the envelope on the DocuSign server
-  const results = await envelopesApi.createEnvelope(process.env.ACCOUNT_ID, {
+  let results = await envelopesApi.createEnvelope(process.env.ACCOUNT_ID, {
     envelopeDefinition: envelope,
   });
 
+  // Create a RecipientViewRequest object using the recipient's name and email.
+  const recipientViewRequest = makeRecipientViewRequest(name, email);
+
+  // Use the DocuSign API client to create a recipient view URL.
+  results = await envelopesApi.createRecipientView(
+    process.env.ACCOUNT_ID,
+    results.envelopeId, // This should be the ID of the envelope that was created earlier in the process.
+    { recipientViewRequest }
+  );
+
   console.log('Envelope results: ', results);
-  response.send('Envelope created successfully');
+
+  //For Testing Purpose: Redirect the client to the recipient view URL.
+  res.redirect(results.url);
 };
 
 app.post('/form', handleFormPost);
@@ -128,6 +163,10 @@ app.post('/form', handleFormPost);
 app.get('/', async (req, res) => {
   await tokenValidation(req, res);
   res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/signing-complete', (req, res) => {
+  res.send('Signing process complete.');
 });
 
 app.listen(3000, () => {
