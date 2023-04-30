@@ -1,3 +1,6 @@
+const docusign = require('docusign-esign');
+
+
 // This function returns an instance of the EnvelopesApi with the API client configured
 const getEnvelopesApi = (req) => {
     // Create a new instance of the DocuSign API client

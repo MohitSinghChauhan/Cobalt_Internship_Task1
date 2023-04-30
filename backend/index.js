@@ -63,7 +63,7 @@ app.post('/form', handleFormPost);
 
 app.get('/', async (req, res) => {
   await tokenValidation(req, res);
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/public', 'index.html'));
 });
 
 app.get('/signing-complete', (req, res) => {
